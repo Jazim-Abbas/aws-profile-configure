@@ -20,6 +20,7 @@ export class AwsProfile {
     }
 
     await this.createCredentialsProfile();
+    await this.addAWSCredentialsToProfile();
   }
 
   private async createAWSDirIfNotExists(): Promise<void> {
@@ -36,7 +37,8 @@ export class AwsProfile {
     try {
       const content = await fs.readFile(filePath);
       this.profiles = JSON.parse(content.toString());
-    } catch (_) {
+    } catch (err) {
+      await fs.writeFile(filePath, JSON.stringify({}));
       this.profiles = {};
     }
   }
@@ -58,6 +60,21 @@ export class AwsProfile {
 
     try {
       await fs.appendFile(credentialsFilePath, profileContent);
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  private async addAWSCredentialsToProfile(): Promise<void> {
+    const filePath = this.awsDir + "/profiles.json";
+
+    try {
+      const content = await fs.readFile(filePath);
+      let profiles = JSON.parse(content.toString());
+
+      profiles = { ...profiles, [this.profile.profileName]: this.profile };
+      console.log("profiles: ", profiles);
+      await fs.writeFile(filePath, JSON.stringify(profiles));
     } catch (err) {
       throw err;
     }
