@@ -14,6 +14,9 @@ module.exports = {
 
     const awsDir = await dir.getAWSDir();
     const isProfileFound = await isProfileExists({ profileName, awsDirPath: awsDir });
+    if (isProfileFound) return;
+
+    await createCredentialsProfile({ ...params, awsDirPath: awsDir });
 
     console.log("is profile exists: ", isProfileFound);
   },
@@ -39,5 +42,30 @@ async function isProfileExists(params) {
     isProfileFound = false;
   } finally {
     return isProfileFound;
+  }
+}
+
+/**
+ * @param {{
+ *   profileName: string
+ *   awsSecretKey: string
+ *   awsAccessKey: string
+ *   awsDirPath: string
+ * }} params
+ */
+async function createCredentialsProfile(params) {
+  const { profileName, awsAccessKey, awsSecretKey, awsDirPath } = params;
+
+  const credentialsFilePath = awsDirPath + "/credentials";
+  const profileContent = `
+        [${profileName}]
+        aws_access_key_id=${awsAccessKey}
+        aws_secret_access_key=${awsSecretKey}
+    `;
+
+  try {
+    await fs.appendFile(credentialsFilePath, profileContent);
+  } catch (err) {
+    throw err;
   }
 }
